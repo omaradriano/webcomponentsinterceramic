@@ -2,8 +2,9 @@ class ImageSlider extends HTMLElement {
   imagesArray: string[];
   imageIndex: number;
   _shadow: ShadowRoot;
-  _type: string;
-  _error: string;
+  _type: string; //Type of the slider view | submit
+  _error: string; //Saves the error in slider
+  _contentExists: boolean; // Aux variable to verify if there is content in imagesArray
   currentImageUrl: string;
 
   constructor() {
@@ -14,55 +15,55 @@ class ImageSlider extends HTMLElement {
     this._error = "";
     this.currentImageUrl = "";
     this._shadow = this.attachShadow({ mode: "closed" });
+    this._contentExists = false;
   }
 
   connectedCallback() {
-    this._type = this.getAttribute("type") || "view";
-    if (this._type === "view") {
-      const urls = this.getAttribute("images");
-      if (!urls) {
-        this.renderEmpty();
-        return;
-      }
+    this._type = this.getAttribute("type") || "view"; // if not type is provided, default to "view"
+    if (this._type !== "view" && this._type !== "submit") {
+      this.renderError('El atributo "type" debe ser "view" o "submit".');
+      return;
+    }
 
-      try {
-        const parsedUrls = JSON.parse(urls);
-        if (Array.isArray(parsedUrls.urls)) {
-          this.imagesArray = parsedUrls.urls;
+    /** Activa el evento para agregar una imagen al slider */
+    let toSubmitImageButton: HTMLDivElement;
+
+    let urls: string | undefined;
+    urls = this.getAttribute("images") ?? "{}";
+    switch (this._type) {
+      case "submit":
+        if (!urls || this.imagesArray.length === 0) {
+          /** Mostrar boton para agregar imagenes */
           this.renderView();
+          toSubmitImageButton = this._shadow.querySelector(
+            ".wrapper__imageContainer"
+          ) as HTMLDivElement;
+          let fileSelector = toSubmitImageButton?.querySelector(
+            '[type="file"][hidden][id="hiddenSubmit"]'
+          ) as HTMLInputElement;
+          toSubmitImageButton?.addEventListener("click", (evnt: Event) => {
+            fileSelector.click();
+          });
+          this.eventToAddImage(fileSelector);
         } else {
-          this.renderError(
-            'El atributo debe tener una propiedad "urls" con un arreglo.'
-          );
+          this.renderView();
+          
         }
-      } catch (e) {
-        this.renderError('JSON inválido en el atributo "images".');
-      }
-    } else if (this._type === "submit") {
-      let toSubmitImageButton = this._shadow.querySelector(
-        ".wrapper__imageContainer"
-      );
-      let fileSelector = toSubmitImageButton?.querySelector(
-        '[type="file"][hidden][id="hiddenSubmit"]'
-      ) as HTMLInputElement;
-      toSubmitImageButton?.addEventListener("click", (evnt: Event) => {
-        fileSelector.click();
-      });
-      fileSelector.addEventListener("change", () => {
-        const file = fileSelector.files && fileSelector.files[0];
-        if (!file) return;
-
-        const blobUrl = URL.createObjectURL(file);
-
-        this.imagesArray.push(blobUrl);
-
-        this.renderView();
-
-
-        // newImage.src = blobUrl
-        // toSubmitImageButton?.appendChild(newImage)
-        // toSubmitImageButton?.querySelector('.addImageIcon')?.remove()
-      });
+        break;
+      case "view":
+        if (!urls || this.imagesArray.length === 0) {
+          /** Mostrar alerta de que no hay imagenes */
+          this.renderView()
+          toSubmitImageButton = this._shadow.querySelector(
+            ".wrapper__imageContainer"
+          ) as HTMLDivElement;
+          let emptyDivMessage = document.createElement("span");
+          emptyDivMessage.innerHTML = 'No hay imagenes para mostrar'
+          toSubmitImageButton.appendChild(emptyDivMessage)
+        } else {
+          this.renderView()
+        }
+        break;
     }
   }
 
@@ -71,7 +72,28 @@ class ImageSlider extends HTMLElement {
      * images: recibe array de urls para renderizar en el slider
      * type: indica si es un componente de solo visualizacion o de subida de imagenes
      */
-    return ["images", "type"];
+    return ["images"];
+  }
+
+  eventToAddImage(inputElement: HTMLInputElement) {
+    inputElement.addEventListener("change", () => {
+      const file = inputElement.files && inputElement.files[0];
+      if (!file) return;
+      const blobUrl = URL.createObjectURL(file);
+      this.imagesArray.push(blobUrl);
+      this.renderView();
+    });
+  }
+
+  loadImagesToComponent(parsedUrls: { urls: [] }) {
+    if (Array.isArray(parsedUrls.urls)) {
+      this.imagesArray = parsedUrls.urls;
+      this.renderView();
+    } else {
+      this.renderError(
+        'El atributo debe tener una propiedad "urls" con un arreglo.'
+      );
+    }
   }
 
   attributeChangedCallback(name: string, oldValue: string, newValue: string) {
@@ -90,11 +112,11 @@ class ImageSlider extends HTMLElement {
         this.renderError("JSON inválido");
       }
     }
-    if (name === "type") {
-      this._type = newValue;
-      console.log(`Tipo de componente actualizado a: ${this._type}`);
-      this.renderView();
-    }
+    // if (name === "type") {
+    //   this._type = newValue;
+    //   console.log(`Tipo de componente actualizado a: ${this._type}`);
+    //   this.renderView();
+    // }
   }
 
   async renderView() {
@@ -209,12 +231,16 @@ class ImageSlider extends HTMLElement {
           // background-color: trasnparent;
         }
 
-        ${this.imagesArray.length === 0 ? `
+        ${
+          this.imagesArray.length === 0
+            ? `
           .wrapper__imageContainer:hover {
           opacity: 0.7;
           cursor: pointer
         }  
-        ` : ``}
+        `
+            : ``
+        }
 
         .addImageIcon {
           height: 60px !important;
@@ -237,62 +263,60 @@ class ImageSlider extends HTMLElement {
 
       </style>
       <div class="wrapper">
-        ${this.imagesArray.length !== 0 ? `<img class="options" src="./icons/optionDots.svg"/>` : ''}
+        ${
+          this.imagesArray.length !== 0
+            ? `<img class="options" src="./icons/optionDots.svg"/>`
+            : ""
+        }
         <div class="wrapper__imageContainer ${
           this.imagesArray.length === 0 ? "border--dotted" : "border--line"
         }">
           ${
-            this._type === "view"
-              ? this.imagesArray
-                  .map((_, index) => {
-                    return `<img src="${this.imagesArray[index]}" class="${
-                      index === this.imageIndex
-                        ? "img--active"
-                        : "img--inactive"
-                    }" alt="Image slider"/>`;
-                  })
-                  .join("")
-              : `
-              ${
-                this.imagesArray.length === 0
-                  ? `
-                    <img class="addImageIcon" src="./icons/add.svg"/>
-                    <input type="file" hidden id="hiddenSubmit"/>
-                  `
-                  : this.imagesArray
-                      .map((_, index) => {
-                        return `<img src="${this.imagesArray[index]}" class="${
-                          index === this.imageIndex
-                            ? "img--active"
-                            : "img--inactive"
-                        }" alt="Image slider"/>`;
-                      })
-                      .join("")
-              }  
+            /** When type is submit and there is no images, add an icon that sugest add an image */
+            this.imagesArray.length === 0 && this._type === "submit"
+              ? `
+              <img class="addImageIcon" src="./icons/add.svg"/>
             `
+              : ""
           }
-        </div>
-        ${
-          this.imagesArray.length > 1
-            ? `
-          <div class='dotContainer'>
-            ${this.imagesArray
-              .map((_, index) => {
-                return `<div class='dotContainer__dot ${
-                  this.imageIndex === index ? "dotContainer__dot--active" : ""
-                }'></div>`;
-              })
-              .join("")}
+          <input type="file" hidden id="hiddenSubmit"/>
+            ${
+              /** In the case imagesArray is not zero, render images in any type case*/
+              this.imagesArray.length !== 0
+                ? this.imagesArray
+                    .map((_, index) => {
+                      return `<img src="${this.imagesArray[index]}" class="${
+                        index === this.imageIndex
+                          ? "img--active"
+                          : "img--inactive"
+                      }" alt="Image slider"/>`;
+                    })
+                    .join("")
+                : ""
+            }
           </div>
-          <svg class='leftArrow' width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M14.2893 5.70708C13.8988 5.31655 13.2657 5.31655 12.8751 5.70708L7.98768 10.5993C7.20729 11.3805 7.2076 12.6463 7.98837 13.427L12.8787 18.3174C13.2693 18.7079 13.9024 18.7079 14.293 18.3174C14.6835 17.9269 14.6835 17.2937 14.293 16.9032L10.1073 12.7175C9.71678 12.327 9.71678 11.6939 10.1073 11.3033L14.2893 7.12129C14.6799 6.73077 14.6799 6.0976 14.2893 5.70708Z" fill="#0F0F0F"/>
-          </svg>
-          <svg class='rightArrow' width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M9.71069 18.2929C10.1012 18.6834 10.7344 18.6834 11.1249 18.2929L16.0123 13.4006C16.7927 12.6195 16.7924 11.3537 16.0117 10.5729L11.1213 5.68254C10.7308 5.29202 10.0976 5.29202 9.70708 5.68254C9.31655 6.07307 9.31655 6.70623 9.70708 7.09676L13.8927 11.2824C14.2833 11.6729 14.2833 12.3061 13.8927 12.6966L9.71069 16.8787C9.32016 17.2692 9.32016 17.9023 9.71069 18.2929Z" fill="#0F0F0F"/>
-          </svg>  
-        `
-            : ""
-        }
+          ${
+            /** In the case imagesArray is more than 1 image, render arrows and dots */
+            this.imagesArray.length > 1
+              ? `
+            <div class='dotContainer'>
+              ${this.imagesArray
+                .map((_, index) => {
+                  return `<div class='dotContainer__dot ${
+                    this.imageIndex === index ? "dotContainer__dot--active" : ""
+                  }'></div>`;
+                })
+                .join("")}
+            </div>
+            <svg class='leftArrow' width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M14.2893 5.70708C13.8988 5.31655 13.2657 5.31655 12.8751 5.70708L7.98768 10.5993C7.20729 11.3805 7.2076 12.6463 7.98837 13.427L12.8787 18.3174C13.2693 18.7079 13.9024 18.7079 14.293 18.3174C14.6835 17.9269 14.6835 17.2937 14.293 16.9032L10.1073 12.7175C9.71678 12.327 9.71678 11.6939 10.1073 11.3033L14.2893 7.12129C14.6799 6.73077 14.6799 6.0976 14.2893 5.70708Z" fill="#0F0F0F"/>
+            </svg>
+            <svg class='rightArrow' width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9.71069 18.2929C10.1012 18.6834 10.7344 18.6834 11.1249 18.2929L16.0123 13.4006C16.7927 12.6195 16.7924 11.3537 16.0117 10.5729L11.1213 5.68254C10.7308 5.29202 10.0976 5.29202 9.70708 5.68254C9.31655 6.07307 9.31655 6.70623 9.70708 7.09676L13.8927 11.2824C14.2833 11.6729 14.2833 12.3061 13.8927 12.6966L9.71069 16.8787C9.32016 17.2692 9.32016 17.9023 9.71069 18.2929Z" fill="#0F0F0F"/>
+            </svg>  
+          `
+              : ""
+          }
       </div>
       `;
 
