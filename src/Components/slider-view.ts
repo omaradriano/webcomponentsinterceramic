@@ -24,47 +24,11 @@ class ImageSlider extends HTMLElement {
       this.renderError('El atributo "type" debe ser "view" o "submit".');
       return;
     }
-
     /** Activa el evento para agregar una imagen al slider */
-    let toSubmitImageButton: HTMLDivElement;
+    this.renderView();
 
     let urls: string | undefined;
     urls = this.getAttribute("images") ?? "{}";
-    switch (this._type) {
-      case "submit":
-        if (!urls || this.imagesArray.length === 0) {
-          /** Mostrar boton para agregar imagenes */
-          this.renderView();
-          toSubmitImageButton = this._shadow.querySelector(
-            ".wrapper__imageContainer"
-          ) as HTMLDivElement;
-          let fileSelector = toSubmitImageButton?.querySelector(
-            '[type="file"][hidden][id="hiddenSubmit"]'
-          ) as HTMLInputElement;
-          toSubmitImageButton?.addEventListener("click", (evnt: Event) => {
-            fileSelector.click();
-          });
-          this.eventToAddImage(fileSelector);
-        } else {
-          this.renderView();
-          
-        }
-        break;
-      case "view":
-        if (!urls || this.imagesArray.length === 0) {
-          /** Mostrar alerta de que no hay imagenes */
-          this.renderView()
-          toSubmitImageButton = this._shadow.querySelector(
-            ".wrapper__imageContainer"
-          ) as HTMLDivElement;
-          let emptyDivMessage = document.createElement("span");
-          emptyDivMessage.innerHTML = 'No hay imagenes para mostrar'
-          toSubmitImageButton.appendChild(emptyDivMessage)
-        } else {
-          this.renderView()
-        }
-        break;
-    }
   }
 
   static get observedAttributes() {
@@ -73,16 +37,6 @@ class ImageSlider extends HTMLElement {
      * type: indica si es un componente de solo visualizacion o de subida de imagenes
      */
     return ["images"];
-  }
-
-  eventToAddImage(inputElement: HTMLInputElement) {
-    inputElement.addEventListener("change", () => {
-      const file = inputElement.files && inputElement.files[0];
-      if (!file) return;
-      const blobUrl = URL.createObjectURL(file);
-      this.imagesArray.push(blobUrl);
-      this.renderView();
-    });
   }
 
   loadImagesToComponent(parsedUrls: { urls: [] }) {
@@ -147,7 +101,7 @@ class ImageSlider extends HTMLElement {
           display: flex;
           align-items: center;
           justify-content: center;
-          background-color: #e9c46a;
+          background-color: #bcbcbc85;
           padding: ${this._type === "submit" ? "50" : "0"}px 0px 30px 0px;
           position: relative;
           height: fit-content;
@@ -234,11 +188,11 @@ class ImageSlider extends HTMLElement {
         ${
           this.imagesArray.length === 0
             ? `
-          .wrapper__imageContainer:hover {
-          opacity: 0.7;
-          cursor: pointer
-        }  
-        `
+            .wrapper__imageContainer:hover {
+              opacity: 0.7;
+              cursor: pointer
+            }  
+          `
             : ``
         }
 
@@ -261,22 +215,65 @@ class ImageSlider extends HTMLElement {
           cursor: pointer;
         }
 
+        .options__container.open {
+          max-height: 500px; /* más alto que el contenido esperado */
+          // height: 200px;
+          opacity: 1;
+          // background-color: red;
+        }
+
+        .options__container {
+          max-height: 0;
+          overflow: hidden;
+          opacity: 0;
+          transition: max-height 0.4s ease, opacity 0.3s ease;
+          position: absolute;
+          background-color: white;
+          height: fit-content;
+          width: 180px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          top: 3%;
+          right: 10%;
+          overflow: hidden;
+          border-radius: 8px;
+        }
+
+        .options__container--option {
+          padding: 10px;
+          cursor: pointer;
+          width: 100%;
+          text-align: center;
+        }
+
+        .options__container--option:hover {
+          background-color: #818181;
+        }
+
       </style>
       <div class="wrapper">
         ${
-          this.imagesArray.length !== 0
+          this.imagesArray.length !== 0 && this._type === "submit"
             ? `<img class="options" src="./icons/optionDots.svg"/>`
             : ""
         }
+
+        <div class="options__container">
+          <div class="options__container--option" data-action='add'>Agregar</div>
+          <div class="options__container--option" data-action='delete'>Eliminar</div>
+          <div class="options__container--option" data-action='update'>Actualizar</div>
+        </div>
+
         <div class="wrapper__imageContainer ${
           this.imagesArray.length === 0 ? "border--dotted" : "border--line"
         }">
           ${
             /** When type is submit and there is no images, add an icon that sugest add an image */
-            this.imagesArray.length === 0 && this._type === "submit"
-              ? `
-              <img class="addImageIcon" src="./icons/add.svg"/>
-            `
+            this.imagesArray.length === 0
+              ? this._type === "submit"
+                ? `<img class="addImageIcon" src="./icons/add.svg"/>`
+                : "No hay contenido para mostrar"
               : ""
           }
           <input type="file" hidden id="hiddenSubmit"/>
@@ -345,7 +342,83 @@ class ImageSlider extends HTMLElement {
       rightArrow.removeEventListener("click", this.nextImage);
       rightArrow.addEventListener("click", this.nextImage);
     }
+
+    /** Listener para abrir selector de archivos */
+    if (this._type === "submit" && this.imagesArray.length === 0) {
+      const toSubmitImageButton = this._shadow.querySelector(
+        ".wrapper__imageContainer"
+      ) as HTMLDivElement;
+      if (toSubmitImageButton) {
+        toSubmitImageButton.removeEventListener("click", this.triggerFileSelector);
+        toSubmitImageButton.addEventListener("click", this.triggerFileSelector);
+      }
+    }
+    /** Interaccion para agregar una imagen desde options */
+    const addImageOption = this._shadow.querySelector(
+      ".options__container--option[data-action='add']"
+    );
+    if (addImageOption) {
+      addImageOption.removeEventListener("click", this.triggerFileSelector);
+      addImageOption.addEventListener("click", this.triggerFileSelector);
+    }
+
+    /** Listener para agregar imagen al contenedor */
+    const fileSelector = this._shadow.querySelector(
+      'input[type="file"][hidden][id="hiddenSubmit"]'
+    ) as HTMLInputElement | null;
+    if (fileSelector) {
+      fileSelector.removeEventListener("change", this.addImageToContainer);
+      fileSelector.addEventListener("change", this.addImageToContainer);
+    }
+
+    /** Listener para abrir las options */
+    const optionsButton = this._shadow.querySelector(".options");
+    const optionsContainer = this._shadow.querySelector(".options__container");
+    if (optionsButton && optionsContainer) {
+      optionsButton.removeEventListener("click", this.openOptions);
+      optionsButton.addEventListener("click", this.openOptions);
+    }
+
+    /** TASK: Implementar funcionalidad para desactivar dropdown cuando se ha dado click en otro lado */
   }
+
+  openOptions = (event: Event) => {
+    event.stopPropagation();
+    const optionsContainer = this._shadow.querySelector(".options__container");
+    if (optionsContainer) {
+      optionsContainer.classList.toggle("open");
+    }
+  }
+
+  /** Agrega una imagen al contenedor principal */
+  addImageToContainer = (event: Event) => {
+    const fileSelector = this._shadow.querySelector(
+      'input[type="file"][hidden][id="hiddenSubmit"]'
+    ) as HTMLInputElement | null;
+    if (!fileSelector || !fileSelector.files || fileSelector.files.length === 0) {
+      console.warn("No file selected or file input not found.");
+      return;
+    }
+    const file = fileSelector.files[0];
+    const blobUrl = URL.createObjectURL(file);
+    this.imagesArray.push(blobUrl);
+    this.imageIndex = this.imagesArray.length - 1;
+    this.renderView();
+  };
+
+  /** Activa el selector de archivos */
+  triggerFileSelector = (event: Event) => {
+    const fileSelector = this._shadow.querySelector(
+      'input[type="file"][hidden][id="hiddenSubmit"]'
+    ) as HTMLInputElement | null;
+    if (!fileSelector) {
+      console.warn("File input not found in shadow DOM.");
+      return;
+    }
+    fileSelector.click();
+  };
+
+  /** Agregar una imagen al contenedor principal */
 
   nextImage = (event: Event) => {
     event.preventDefault();
