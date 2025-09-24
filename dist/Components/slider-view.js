@@ -18,7 +18,7 @@ class ImageSlider extends HTMLElement {
             const file = fileSelector.files[0];
             const blobUrl = URL.createObjectURL(file);
             this.imagesArray.push(blobUrl);
-            this.imageIndex = this.imagesArray.length - 1;
+            this.imageArrayIndex = this.imagesArray.length - 1;
             this.renderView();
         };
         /** Activa el selector de archivos */
@@ -33,33 +33,33 @@ class ImageSlider extends HTMLElement {
         /** Agregar una imagen al contenedor principal */
         this.nextImage = (event) => {
             event.preventDefault();
-            this.imageIndex++;
-            this.imageIndex > this.imagesArray.length - 1
-                ? (this.imageIndex = 0)
+            this.imageArrayIndex++;
+            this.imageArrayIndex > this.imagesArray.length - 1
+                ? (this.imageArrayIndex = 0)
                 : null;
             // console.log(`Selected image: ${this.imageIndex}`);
             this.renderView();
         };
         this.prevImage = (event) => {
             event.preventDefault();
-            this.imageIndex--;
-            this.imageIndex < 0
-                ? (this.imageIndex = this.imagesArray.length - 1)
+            this.imageArrayIndex--;
+            this.imageArrayIndex < 0
+                ? (this.imageArrayIndex = this.imagesArray.length - 1)
                 : null;
             // console.log(`Selected image: ${this.imageIndex}`);
             this.renderView();
         };
         this.imagesArray = [];
-        this.imageIndex = 0;
-        this._type = "";
-        this._error = "";
-        this.currentImageUrl = "";
+        this.imageArrayIndex = 0;
+        this._sliderType = "";
+        this._errorOnSlider = "";
+        this._currImgOnSlider = "";
         this._shadow = this.attachShadow({ mode: "closed" });
-        this._contentExists = false;
+        this._contentOnSliderExist = false;
     }
     connectedCallback() {
-        this._type = this.getAttribute("type") || "view"; // if not type is provided, default to "view"
-        if (this._type !== "view" && this._type !== "submit") {
+        this._sliderType = this.getAttribute("type") || "view";
+        if (this._sliderType !== "view" && this._sliderType !== "submit") {
             this.renderError('El atributo "type" debe ser "view" o "submit".');
             return;
         }
@@ -90,7 +90,7 @@ class ImageSlider extends HTMLElement {
                 const parsed = JSON.parse(newValue);
                 if (Array.isArray(parsed.urls)) {
                     this.imagesArray = parsed.urls;
-                    this.imageIndex = 0;
+                    this.imageArrayIndex = 0;
                     console.log('Se ha actualizado el atributo "images"');
                     this.renderView();
                 }
@@ -103,8 +103,8 @@ class ImageSlider extends HTMLElement {
             }
         }
         // if (name === "type") {
-        //   this._type = newValue;
-        //   console.log(`Tipo de componente actualizado a: ${this._type}`);
+        //   this._sliderType = newValue;
+        //   console.log(`Tipo de componente actualizado a: ${this._sliderType}`);
         //   this.renderView();
         // }
     }
@@ -137,7 +137,7 @@ class ImageSlider extends HTMLElement {
           align-items: center;
           justify-content: center;
           background-color: #bcbcbc85;
-          padding: ${this._type === "submit" ? "50" : "0"}px 0px 30px 0px;
+          padding: ${this._sliderType === "submit" ? "50" : "0"}px 0px 30px 0px;
           position: relative;
           height: fit-content;
           border-radius: 8px;
@@ -286,7 +286,7 @@ class ImageSlider extends HTMLElement {
 
       </style>
       <div class="wrapper">
-        ${this.imagesArray.length !== 0 && this._type === "submit"
+        ${this.imagesArray.length !== 0 && this._sliderType === "submit"
             ? `<img class="options" src="./icons/optionDots.svg"/>`
             : ""}
 
@@ -300,7 +300,7 @@ class ImageSlider extends HTMLElement {
           ${
         /** When type is submit and there is no images, add an icon that sugest add an image */
         this.imagesArray.length === 0
-            ? this._type === "submit"
+            ? this._sliderType === "submit"
                 ? `<img class="addImageIcon" src="./icons/add.svg"/>`
                 : "No hay contenido para mostrar"
             : ""}
@@ -310,7 +310,7 @@ class ImageSlider extends HTMLElement {
         this.imagesArray.length !== 0
             ? this.imagesArray
                 .map((_, index) => {
-                return `<img src="${this.imagesArray[index]}" class="${index === this.imageIndex
+                return `<img src="${this.imagesArray[index]}" class="${index === this.imageArrayIndex
                     ? "img--active"
                     : "img--inactive"}" alt="Image slider"/>`;
             })
@@ -324,14 +324,14 @@ class ImageSlider extends HTMLElement {
             <div class='dotContainer'>
               ${this.imagesArray
                 .map((_, index) => {
-                return `<div class='dotContainer__dot ${this.imageIndex === index ? "dotContainer__dot--active" : ""}'></div>`;
+                return `<div class='dotContainer__dot ${this.imageArrayIndex === index ? "dotContainer__dot--active" : ""}'></div>`;
             })
                 .join("")}
             </div>
-            <svg class='leftArrow' width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg class='leftArrow' viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M14.2893 5.70708C13.8988 5.31655 13.2657 5.31655 12.8751 5.70708L7.98768 10.5993C7.20729 11.3805 7.2076 12.6463 7.98837 13.427L12.8787 18.3174C13.2693 18.7079 13.9024 18.7079 14.293 18.3174C14.6835 17.9269 14.6835 17.2937 14.293 16.9032L10.1073 12.7175C9.71678 12.327 9.71678 11.6939 10.1073 11.3033L14.2893 7.12129C14.6799 6.73077 14.6799 6.0976 14.2893 5.70708Z" fill="#0F0F0F"/>
             </svg>
-            <svg class='rightArrow' width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg class='rightArrow' viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M9.71069 18.2929C10.1012 18.6834 10.7344 18.6834 11.1249 18.2929L16.0123 13.4006C16.7927 12.6195 16.7924 11.3537 16.0117 10.5729L11.1213 5.68254C10.7308 5.29202 10.0976 5.29202 9.70708 5.68254C9.31655 6.07307 9.31655 6.70623 9.70708 7.09676L13.8927 11.2824C14.2833 11.6729 14.2833 12.3061 13.8927 12.6966L9.71069 16.8787C9.32016 17.2692 9.32016 17.9023 9.71069 18.2929Z" fill="#0F0F0F"/>
             </svg>  
           `
@@ -362,7 +362,7 @@ class ImageSlider extends HTMLElement {
             rightArrow.addEventListener("click", this.nextImage);
         }
         /** Listener para abrir selector de archivos */
-        if (this._type === "submit" && this.imagesArray.length === 0) {
+        if (this._sliderType === "submit" && this.imagesArray.length === 0) {
             const toSubmitImageButton = this._shadow.querySelector(".wrapper__imageContainer");
             if (toSubmitImageButton) {
                 toSubmitImageButton.removeEventListener("click", this.triggerFileSelector);
