@@ -22,3 +22,7 @@
 .hidden {
     display: none;
 } */
+
+*{
+    font-family: 'Fira Code';
+}

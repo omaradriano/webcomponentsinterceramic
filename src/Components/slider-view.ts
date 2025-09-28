@@ -6,6 +6,7 @@ class ImageSlider extends HTMLElement {
   _errorOnSlider: string; //Saves the error in slider
   _contentOnSliderExist: boolean; // Aux variable to verify if there is content in imagesArray
   _currImgOnSlider: string;
+  // _menu: HTMLElement | null;
 
   constructor() {
     super();
@@ -14,8 +15,17 @@ class ImageSlider extends HTMLElement {
     this._sliderType = "";
     this._errorOnSlider = "";
     this._currImgOnSlider = "";
-    this._shadow = this.attachShadow({ mode: "closed" });
+    this._shadow = this.attachShadow({ mode: "open" });
     this._contentOnSliderExist = false;
+
+    // this._menu = this._shadow.querySelector('.options__container') ?? null
+  }
+
+  closeOptionsContainer(): void {
+    // this._menu?.classList.remove('open')
+    // this._shadow.querySelector('.options__container')?.classList.remove('open')
+
+    console.log('Cerrando menu de opciones');
   }
 
   connectedCallback() {
@@ -79,11 +89,16 @@ class ImageSlider extends HTMLElement {
         
         *{
           user-select: none;
+          box-sizing: border-box;
+        }
+        
+        html, body {
+          -webkit-text-size-adjust: none;
         }
 
         :host {
-            display: block;
-            width: 100%;
+          display: block;
+          width: 100%;
         }
 
         .border--dotted {
@@ -106,24 +121,21 @@ class ImageSlider extends HTMLElement {
           position: relative;
           height: fit-content;
           border-radius: 8px;
+          padding: 25px 5px 20px 5px;
         }
 
-        // .wrapper__imageContainer:hover > img {
-        //   background-color: black;
-        // }
-
         .wrapper__imageContainer > img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-            // margin: 0 30px 0px 30px;
+          width: 100%;
+          // height: 100%;
+          object-fit: cover;
+          display: block;
+          // margin: 0 30px 0px 30px;
         }
 
         .dotContainer {
             position: absolute;
-            bottom: 5px;
-            height: 20px;
+            bottom: 2%;
+            height: 10px;
             width: fit-content;
             // background-color: red;
             display: flex;
@@ -135,29 +147,29 @@ class ImageSlider extends HTMLElement {
         .dotContainer__dot {
             background-color: yellow;
             background-color: #fff;
-            width: 10px;
-            height: 10px;
+            width: 6px;
+            height: 6px;
             border-radius: 50%;
         }
 
         .dotContainer__dot--active {
-            background-color: red;
+          background-color: red;
         }
 
         .leftArrow {
-            position: absolute;
-            height: 50px;
-            width: 40px;
-            // background-color: black;
-            left: calc(3% - 15px);
+          position: absolute;
+          height: 25px;
+          width: auto;
+          // background-color: black;
+          left: calc(4% - 10px);
         }
 
         .rightArrow {
-            position: absolute;
-            height: 50px;
-            width: 40px;
-            // background-color: black;
-            right: calc(3% - 15px);
+          position: absolute;
+          height: 25px;
+          width: auto;
+          // background-color: black;
+          right: calc(4% - 10px);
         }
 
         .img--active {
@@ -173,16 +185,16 @@ class ImageSlider extends HTMLElement {
         }
 
         .wrapper__imageContainer {
-          height: 100%;
+          aspect-ratio: 16 / 9;
           width: 85%;
-          object-fit: cover;
-          display: block;
+          // object-fit: cover;
+          // display: block;
           display: flex;
           align-items: center;
           justify-content: center;
           border-radius: 8px;
           overflow: hidden;
-          // background-color: trasnparent;
+          background-color: red;
         }
 
         ${
@@ -203,12 +215,25 @@ class ImageSlider extends HTMLElement {
           border-radius: 50%;
         }
 
-        .options {
+        .options__wrapper {
+          display: flex;
+          align-items: center;
+          justify-content: center;
           position: absolute;
-          height: 16px;
-          width: auto;
-          top: 11px;
-          right: 11px;
+          top: 1px;
+          right: 1px;
+          height: 30px;
+          width: 30px;
+          // background-color: red;
+        }
+
+        .options__button {
+          display: flex;
+          position: absolute;
+          height: 18px;
+          width: 18px;
+          // top: 7px;
+          // right: 7px;
           background: #f2f2f2ff;
           padding: 6px;
           border-radius: 50%;
@@ -230,14 +255,15 @@ class ImageSlider extends HTMLElement {
           position: absolute;
           background-color: white;
           height: fit-content;
-          width: 180px;
+          width: max-content;
           display: flex;
           flex-direction: column;
           align-items: center;
-          top: 3%;
-          right: 10%;
+          top: calc(10% + 25px);
+          right: calc(10% + 25px);
           overflow: hidden;
           border-radius: 8px;
+          z-index: 100;
         }
 
         .options__container--option {
@@ -245,29 +271,90 @@ class ImageSlider extends HTMLElement {
           cursor: pointer;
           width: 100%;
           text-align: center;
+          font-size: 12px;
+          display: flex;
+          align-items: center;
+          // justify-content: flex-start;
+          gap: 10px;
         }
 
         .options__container--option:hover {
           background-color: #818181;
         }
 
+        .option__icon {
+          height: 12px;
+          width: auto;
+        }
+
+        @media screen and (min-width: 768px){
+          .dotContainer__dot {
+            width: 9px;
+            height: 9px;
+          }
+          .options__wrapper {
+            top: 10px;
+            right: 10px;
+          }
+          .dotContainer {
+            bottom: 3%;
+          }
+          .options__button {
+            height: 25px;
+            width: 25px;
+            // top: 15px;
+            // right: 15px;
+          }
+          .rightArrow{
+            height: 35px;
+          }
+          .leftArrow{
+            height: 35px;
+          }
+
+          .options__container--option{
+            font-size: 16px;
+          }
+          .option__icon{
+            height: 18px;
+          }
+        }
+
+        @media screen and (min-width: 1024px){
+          .options__container--option{
+            font-size: 16px;
+          }
+          .option__icon{
+            font-size: 18px;
+          }
+        }
+
       </style>
       <div class="wrapper">
         ${
           this.imagesArray.length !== 0 && this._sliderType === "submit"
-            ? `<img class="options" src="./icons/optionDots.svg"/>`
+            ? `
+              <span class="options__wrapper">
+                <img class="options__button" src="./icons/optionDots.svg"/>
+                <div class="options__container open">
+                  <div class="options__container--option" data-action='add'><img class="option__icon" src="./icons/add.svg"/>Agregar</div>
+                  <div class="options__container--option" data-action='delete'><img class="option__icon" src="./icons/delete.svg"/>Eliminar</div>
+                  <div class="options__container--option" data-action='update'><img class="option__icon" src="./icons/update.svg"/>Actualizar</div>
+                </div>
+              </span>
+              `
             : ""
         }
-
-        <div class="options__container">
-          <div class="options__container--option" data-action='add'>Agregar</div>
-          <div class="options__container--option" data-action='delete'>Eliminar</div>
-          <div class="options__container--option" data-action='update'>Actualizar</div>
-        </div>
 
         <div class="wrapper__imageContainer ${
           this.imagesArray.length === 0 ? "border--dotted" : "border--line"
         }">
+          <svg class='leftArrow' viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M14.2893 5.70708C13.8988 5.31655 13.2657 5.31655 12.8751 5.70708L7.98768 10.5993C7.20729 11.3805 7.2076 12.6463 7.98837 13.427L12.8787 18.3174C13.2693 18.7079 13.9024 18.7079 14.293 18.3174C14.6835 17.9269 14.6835 17.2937 14.293 16.9032L10.1073 12.7175C9.71678 12.327 9.71678 11.6939 10.1073 11.3033L14.2893 7.12129C14.6799 6.73077 14.6799 6.0976 14.2893 5.70708Z" fill="#0F0F0F"/>
+          </svg>
+          <svg class='rightArrow' viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M9.71069 18.2929C10.1012 18.6834 10.7344 18.6834 11.1249 18.2929L16.0123 13.4006C16.7927 12.6195 16.7924 11.3537 16.0117 10.5729L11.1213 5.68254C10.7308 5.29202 10.0976 5.29202 9.70708 5.68254C9.31655 6.07307 9.31655 6.70623 9.70708 7.09676L13.8927 11.2824C14.2833 11.6729 14.2833 12.3061 13.8927 12.6966L9.71069 16.8787C9.32016 17.2692 9.32016 17.9023 9.71069 18.2929Z" fill="#0F0F0F"/>
+          </svg>  
           ${
             /** When type is submit and there is no images, add an icon that sugest add an image */
             this.imagesArray.length === 0
@@ -305,12 +392,6 @@ class ImageSlider extends HTMLElement {
                 })
                 .join("")}
             </div>
-            <svg class='leftArrow' viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M14.2893 5.70708C13.8988 5.31655 13.2657 5.31655 12.8751 5.70708L7.98768 10.5993C7.20729 11.3805 7.2076 12.6463 7.98837 13.427L12.8787 18.3174C13.2693 18.7079 13.9024 18.7079 14.293 18.3174C14.6835 17.9269 14.6835 17.2937 14.293 16.9032L10.1073 12.7175C9.71678 12.327 9.71678 11.6939 10.1073 11.3033L14.2893 7.12129C14.6799 6.73077 14.6799 6.0976 14.2893 5.70708Z" fill="#0F0F0F"/>
-            </svg>
-            <svg class='rightArrow' viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M9.71069 18.2929C10.1012 18.6834 10.7344 18.6834 11.1249 18.2929L16.0123 13.4006C16.7927 12.6195 16.7924 11.3537 16.0117 10.5729L11.1213 5.68254C10.7308 5.29202 10.0976 5.29202 9.70708 5.68254C9.31655 6.07307 9.31655 6.70623 9.70708 7.09676L13.8927 11.2824C14.2833 11.6729 14.2833 12.3061 13.8927 12.6966L9.71069 16.8787C9.32016 17.2692 9.32016 17.9023 9.71069 18.2929Z" fill="#0F0F0F"/>
-            </svg>  
           `
               : ""
           }
@@ -372,14 +453,24 @@ class ImageSlider extends HTMLElement {
     }
 
     /** Listener para abrir las options */
-    const optionsButton = this._shadow.querySelector(".options");
+    const optionsButton = this._shadow.querySelector(".options__button");
     const optionsContainer = this._shadow.querySelector(".options__container");
     if (optionsButton && optionsContainer) {
       optionsButton.removeEventListener("click", this.openOptions);
       optionsButton.addEventListener("click", this.openOptions);
     }
 
-    /** TASK: Implementar funcionalidad para desactivar dropdown cuando se ha dado click en otro lado */
+    /** Listener para cerrar el menu de opciones cuando se ha presionado en otro lado */
+    document.removeEventListener('click', this.closeOptionsOnClickOutside);
+    document.addEventListener('click', this.closeOptionsOnClickOutside);
+  }
+
+  closeOptionsOnClickOutside = (event: MouseEvent) => {
+    const optionsMenu = this._shadow.querySelector('.options__container');
+    const targetElement = event.composedPath()[0] as HTMLElement;
+    if (targetElement.parentElement !== optionsMenu) {
+      optionsMenu?.classList.remove('open');
+    }
   }
 
   openOptions = (event: Event) => {
