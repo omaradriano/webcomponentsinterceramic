@@ -3,14 +3,18 @@ class ImageSlider extends HTMLElement {
   imageArrayIndex: number;
   _shadow: ShadowRoot;
   _sliderType: string; //Type of the slider view | submit
+  _bgColor: string; // Background color of the slider
   _errorOnSlider: string; //Saves the error in slider
   _contentOnSliderExist: boolean; // Aux variable to verify if there is content in imagesArray
   _currImgOnSlider: string;
+  _currentUploadImageOption: string; // Aux variable to know if the user is adding or updating an image
   // _menu: HTMLElement | null;
 
   constructor() {
     super();
+    this._bgColor = "ffffff";
     this.imagesArray = [];
+    this._currentUploadImageOption = "";
     this.imageArrayIndex = 0;
     this._sliderType = "";
     this._errorOnSlider = "";
@@ -18,14 +22,6 @@ class ImageSlider extends HTMLElement {
     this._shadow = this.attachShadow({ mode: "open" });
     this._contentOnSliderExist = false;
 
-    // this._menu = this._shadow.querySelector('.options__container') ?? null
-  }
-
-  closeOptionsContainer(): void {
-    // this._menu?.classList.remove('open')
-    // this._shadow.querySelector('.options__container')?.classList.remove('open')
-
-    console.log('Cerrando menu de opciones');
   }
 
   connectedCallback() {
@@ -34,11 +30,15 @@ class ImageSlider extends HTMLElement {
       this.renderError('El atributo "type" debe ser "view" o "submit".');
       return;
     }
+
+    this._bgColor = this.getAttribute("bgColor") || "ffffff";
+
     /** Activa el evento para agregar una imagen al slider */
     this.renderView();
 
     let urls: string | undefined;
     urls = this.getAttribute("images") ?? "{}";
+
   }
 
   static get observedAttributes() {
@@ -46,7 +46,7 @@ class ImageSlider extends HTMLElement {
      * images: recibe array de urls para renderizar en el slider
      * type: indica si es un componente de solo visualizacion o de subida de imagenes
      */
-    return ["images"];
+    return ["images", "bgColor"];
   }
 
   loadImagesToComponent(parsedUrls: { urls: [] }) {
@@ -76,11 +76,6 @@ class ImageSlider extends HTMLElement {
         this.renderError("JSON inválido");
       }
     }
-    // if (name === "type") {
-    //   this._sliderType = newValue;
-    //   console.log(`Tipo de componente actualizado a: ${this._sliderType}`);
-    //   this.renderView();
-    // }
   }
 
   async renderView() {
@@ -106,7 +101,7 @@ class ImageSlider extends HTMLElement {
         }
 
         .border--line {
-          border: 3px solid #dcdcdcff;
+          border: 3px solid #ffffff04;
         }
 
         .wrapper {
@@ -116,7 +111,7 @@ class ImageSlider extends HTMLElement {
           display: flex;
           align-items: center;
           justify-content: center;
-          background-color: #bcbcbc85;
+          background-color: #${this._bgColor ?? "ffffff"};
           padding: ${this._sliderType === "submit" ? "50" : "0"}px 0px 30px 0px;
           position: relative;
           height: fit-content;
@@ -146,7 +141,7 @@ class ImageSlider extends HTMLElement {
 
         .dotContainer__dot {
             background-color: yellow;
-            background-color: #fff;
+            background-color: #dbdbdbff;
             width: 6px;
             height: 6px;
             border-radius: 50%;
@@ -194,7 +189,7 @@ class ImageSlider extends HTMLElement {
           justify-content: center;
           border-radius: 8px;
           overflow: hidden;
-          background-color: red;
+          background-color: #d6d6d6;
         }
 
         ${
@@ -336,7 +331,7 @@ class ImageSlider extends HTMLElement {
             ? `
               <span class="options__wrapper">
                 <img class="options__button" src="./icons/optionDots.svg"/>
-                <div class="options__container open">
+                <div class="options__container">
                   <div class="options__container--option" data-action='add'><img class="option__icon" src="./icons/add.svg"/>Agregar</div>
                   <div class="options__container--option" data-action='delete'><img class="option__icon" src="./icons/delete.svg"/>Eliminar</div>
                   <div class="options__container--option" data-action='update'><img class="option__icon" src="./icons/update.svg"/>Actualizar</div>
@@ -349,12 +344,14 @@ class ImageSlider extends HTMLElement {
         <div class="wrapper__imageContainer ${
           this.imagesArray.length === 0 ? "border--dotted" : "border--line"
         }">
-          <svg class='leftArrow' viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          ${this.imagesArray.length > 1 ? `
+            <svg class='leftArrow' viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M14.2893 5.70708C13.8988 5.31655 13.2657 5.31655 12.8751 5.70708L7.98768 10.5993C7.20729 11.3805 7.2076 12.6463 7.98837 13.427L12.8787 18.3174C13.2693 18.7079 13.9024 18.7079 14.293 18.3174C14.6835 17.9269 14.6835 17.2937 14.293 16.9032L10.1073 12.7175C9.71678 12.327 9.71678 11.6939 10.1073 11.3033L14.2893 7.12129C14.6799 6.73077 14.6799 6.0976 14.2893 5.70708Z" fill="#0F0F0F"/>
-          </svg>
-          <svg class='rightArrow' viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M9.71069 18.2929C10.1012 18.6834 10.7344 18.6834 11.1249 18.2929L16.0123 13.4006C16.7927 12.6195 16.7924 11.3537 16.0117 10.5729L11.1213 5.68254C10.7308 5.29202 10.0976 5.29202 9.70708 5.68254C9.31655 6.07307 9.31655 6.70623 9.70708 7.09676L13.8927 11.2824C14.2833 11.6729 14.2833 12.3061 13.8927 12.6966L9.71069 16.8787C9.32016 17.2692 9.32016 17.9023 9.71069 18.2929Z" fill="#0F0F0F"/>
-          </svg>  
+            </svg>
+            <svg class='rightArrow' viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9.71069 18.2929C10.1012 18.6834 10.7344 18.6834 11.1249 18.2929L16.0123 13.4006C16.7927 12.6195 16.7924 11.3537 16.0117 10.5729L11.1213 5.68254C10.7308 5.29202 10.0976 5.29202 9.70708 5.68254C9.31655 6.07307 9.31655 6.70623 9.70708 7.09676L13.8927 11.2824C14.2833 11.6729 14.2833 12.3061 13.8927 12.6966L9.71069 16.8787C9.32016 17.2692 9.32016 17.9023 9.71069 18.2929Z" fill="#0F0F0F"/>
+            </svg> 
+            ` : ""} 
           ${
             /** When type is submit and there is no images, add an icon that sugest add an image */
             this.imagesArray.length === 0
@@ -401,15 +398,6 @@ class ImageSlider extends HTMLElement {
     this.loadListeners();
   }
 
-  // async loadStyles() {
-  //   const response = await fetch('/dist/styles/image-slider.css');
-  //   console.log(response.text());
-  //   const css = await response.text();
-  //   const styleEl = document.createElement('style');
-  //   styleEl.textContent = css;
-  //   this._shadow.appendChild(styleEl);
-  // }
-
   loadListeners() {
     /** Listener para previa imagen */
     const leftArrow = this._shadow.querySelector(".leftArrow");
@@ -443,6 +431,24 @@ class ImageSlider extends HTMLElement {
       addImageOption.addEventListener("click", this.triggerFileSelector);
     }
 
+    /** Interaccion para actualizar una imagen desde options */
+    const updateImageOption = this._shadow.querySelector(
+      ".options__container--option[data-action='update']"
+    );
+    if (updateImageOption) {
+      updateImageOption.removeEventListener("click", this.triggerFileSelector);
+      updateImageOption.addEventListener("click", this.triggerFileSelector);
+    }
+
+    /** Interaccion para eliminar una imagen desde options */
+    const deleteImageOption = this._shadow.querySelector(
+      ".options__container--option[data-action='delete']"
+    );
+    if (deleteImageOption) {
+      deleteImageOption.removeEventListener("click", this.deleteImageFromContainer);
+      deleteImageOption.addEventListener("click", this.deleteImageFromContainer);
+    }
+
     /** Listener para agregar imagen al contenedor */
     const fileSelector = this._shadow.querySelector(
       'input[type="file"][hidden][id="hiddenSubmit"]'
@@ -463,6 +469,14 @@ class ImageSlider extends HTMLElement {
     /** Listener para cerrar el menu de opciones cuando se ha presionado en otro lado */
     document.removeEventListener('click', this.closeOptionsOnClickOutside);
     document.addEventListener('click', this.closeOptionsOnClickOutside);
+  }
+
+  deleteImageFromContainer = (event: Event) => {
+    console.log(event.target);
+    if(this.imagesArray.length === 0) return;
+    this.imagesArray.splice(this.imageArrayIndex, 1);
+    this.imageArrayIndex = Math.min(this.imageArrayIndex, this.imagesArray.length - 1);
+    this.renderView();
   }
 
   closeOptionsOnClickOutside = (event: MouseEvent) => {
@@ -492,13 +506,19 @@ class ImageSlider extends HTMLElement {
     }
     const file = fileSelector.files[0];
     const blobUrl = URL.createObjectURL(file);
-    this.imagesArray.push(blobUrl);
-    this.imageArrayIndex = this.imagesArray.length - 1;
+    if(this._currentUploadImageOption === "update"){
+      this.imagesArray[this.imageArrayIndex] = blobUrl;
+    }else{
+      this.imagesArray.push(blobUrl);
+      this.imageArrayIndex = this.imagesArray.length - 1;
+    }
     this.renderView();
   };
 
   /** Activa el selector de archivos */
   triggerFileSelector = (event: Event) => {
+    let action = (event.target as HTMLElement).getAttribute('data-action');
+    this._currentUploadImageOption = action ? action : "add";
     const fileSelector = this._shadow.querySelector(
       'input[type="file"][hidden][id="hiddenSubmit"]'
     ) as HTMLInputElement | null;
@@ -530,8 +550,6 @@ class ImageSlider extends HTMLElement {
     // console.log(`Selected image: ${this.imageIndex}`);
     this.renderView();
   };
-
-  updateDotContainer() {}
 
   renderEmpty() {
     this._shadow.innerHTML = `<div>No se proporcionó el atributo "images".</div>`;
